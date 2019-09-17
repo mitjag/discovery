@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:p="http://xmlns.jcp.org/jsf/passthrough"
+	template="/WEB-INF/templates/master.xhtml">
+	<ui:define name="content">
+		<f:metadata>
+			<f:viewParam name="year" value="#{nodeController.year}"></f:viewParam>
+			<f:viewParam name="month" value="#{nodeController.month}"></f:viewParam>
+			<f:viewParam name="nodeKey" value="#{nodeController.nodeKey}"></f:viewParam>
+			<f:viewParam name="groupTag" value="#{nodeController.groupTag}"></f:viewParam>
+			<f:viewParam name="key_list" value="#{nodeController.nodeKey}"></f:viewParam>
+			<f:viewParam name="keyList" value="#{nodeController.nodeKey}"></f:viewParam>
+			<f:viewAction action="#{nodeController.find}"></f:viewAction>
+		</f:metadata>
+		<h3>Find your Skywire node</h3>
+		<h:form id="nodeForm">
+			<div class="form-inline">
+				<div class="form-group">
+					<label for="year">Year</label>
+					<h:inputText id="year" value="#{nodeController.year}"
+						p:placeholder="Year" class="form-control input-sm"
+						style="width: 60px; margin-left: 10px;" />
+				</div>
+				<div class="form-group" style="margin-left: 20px;">
+					<label for="month">Month</label>
+					<h:inputText id="month" value="#{nodeController.month}"
+						p:placeholder="Month" class="form-control input-sm"
+						style="width: 60px; margin-left: 10px;" />
+				</div>
+				<div class="form-group" style="margin-left: 20px;">
+					<label for="nodePublicKey">Public key</label>
+					<h:inputText id="nodePublicKey" value="#{nodeController.nodeKey}"
+						p:placeholder="Public keys separated by comma"
+						class="form-control input-sm"
+						style="width: 280px; margin-left: 10px;" />
+				</div>
+				<h:commandButton value="Find" class="btn btn-primary btn-sm"
+					style="margin-left: 20px;">
+					<f:ajax event="click" listener="#{nodeController.find}"
+						execute="@form"
+						render="nodePublicKey nodeLink nodeListPanel nodeForm:nodePanel nodeForm:selectedNodeKey nodeKeyList"
+						onevent="handleFind" />
+				</h:commandButton>
+				<h:commandButton value="Reset" styleClass="btn btn-info btn-sm"
+					style="margin-left: 10px;">
+					<f:ajax event="click" listener="#{nodeController.reset}"
+						render="nodePublicKey nodeLink nodeListPanel nodeForm:nodePanel nodeForm:selectedNodeKey nodeKeyList"
+						onevent="handleReset" />
+				</h:commandButton>
+				<ui:remove>
+					<h:commandButton value="Add to group"
+						class="btn btn-default btn-sm" style="margin-left: 20px;">
+						<f:ajax event="click" listener="#{nodeController.addToGroup}"
+							execute="@form" render="groupTag groupPanel" onevent="handleFind" />
+					</h:commandButton>
+				</ui:remove>
+			</div>
+
+			<h:inputHidden id="nodeKeyList" value="#{nodeController.nodeKeyList}" />
+			<div class="row" style="margin-top: 10px;">
+				<div class="col-md-12">
+					<h:panelGroup id="nodeLink">
+						<h:link value="#{nodeController.year}/#{nodeController.month}"
+							rendered="#{not empty nodeController.year and not empty nodeController.month and not empty nodeController.nodeKeyList}">
+							<f:param name="year" value="#{nodeController.year}" />
+							<f:param name="month" value="#{nodeController.month}" />
+							<f:param name="nodeKey" value="#{nodeController.nodeKeyList}" />
+						</h:link>
+						&#160;
+						<h:link value="#{nodeController.nodeLink()}"
+							rendered="#{not empty nodeController.year and not empty nodeController.month and not empty nodeController.nodeKeyList}">
+							<f:param name="nodeKey" value="#{nodeController.nodeKeyList}" />
+						</h:link>
+					</h:panelGroup>
+				</div>
+			</div>
+
+			<ui:remove>
+				<div class="row" style="margin-top: 10px;">
+					<div class="col-md-12">
+						<h:outputText id="groupTag" value="#{nodeController.groupTag}" />
+					</div>
+				</div>
+			</ui:remove>
+
+			<div class="row" style="margin-top: 10px;">
+				<div class="col-md-1"></div>
+				<div class="col-md-10">
+					<canvas id="dayChart" style="width: 900px; height: 300px;"></canvas>
+				</div>
+				<div class="col-md-1"></div>
+			</div>
+
+			<h:panelGroup id="nodeListPanel" layout="block" styleClass="row">
+				<div class="col-md-8">
+					<h:dataTable value="#{nodeController.nodeList}" var="n"
+						rendered="#{not empty nodeController.nodeList}"
+						styleClass="table table-hover table-condensed">
+						<h:column>
+							<f:facet name="header">Node Key</f:facet>
+						#{n.key}
+						</h:column>
+						<h:column>
+							<f:facet name="header">Online</f:facet>
+						#{nodeController.percent(n.key)}%
+						</h:column>
+						<h:column>
+							<f:facet name="header">Action</f:facet>
+							<h:commandLink value="Details">
+								<f:ajax event="click" listener="#{nodeController.selectNode(n)}"
+									render="nodeForm:nodePanel nodeForm:selectedNodeKey" />
+							</h:commandLink>
+						</h:column>
+					</h:dataTable>
+				</div>
+			</h:panelGroup>
+			
+			<h4>
+				<h:outputText id="selectedNodeKey"
+					value="#{nodeController.selectedNodeData.nodeKey}" />
+			</h4>
+			
+			<h:panelGroup id="nodePanel">
+				<h:dataTable id="nodeTable"
+					value="#{nodeController.selectedNodeData.nodeStatistic}" var="n"
+					rendered="#{(not empty nodeController.year and not empty nodeController.month and not empty nodeController.nodeList) or not empty nodeController.groupTag}"
+					styleClass="table table-bordered table-striped table-hover table-condensed"
+					style="margin-top: 10px;">
+					<h:column>
+						<f:facet name="header">
+							<h:outputText value="Day" title="d.M.yyyy" />
+						</f:facet>
+						<h:outputLabel value="#{n.day}">
+							<f:convertDateTime pattern="d.M.yyyy" />
+						</h:outputLabel>
+					</h:column>
+					<h:column>
+						<f:facet name="header">Node (per minute)
+						</f:facet>#{n.nodeCount} / #{n.fileCount} = <h:outputText
+							value="#{nodeController.percent(n.nodeCount, n.fileCount)}%"></h:outputText>
+					</h:column>
+				</h:dataTable>
+			</h:panelGroup>
+		</h:form>
+
+		<script>
+            $(document).ready(function($) {
+                loadChart();
+            });
+			
+            function handleFind(data) {
+                if (data.status == "success") {
+                    loadChart();
+                }
+            }
+            
+            function handleReset(data) {
+                if (data.status == "success") {
+                    if (myChart != null) {
+                        myChart.data.datasets = [];
+                        myChart.update();
+                    }
+                }
+            }
+            
+            var myChart = null;
+            function loadChart() {
+                var year = $('#nodeForm\\:year').val();
+                var month = $('#nodeForm\\:month').val();
+                var nodeKey = $('#nodeForm\\:nodeKeyList').val();
+                var groupTag = $('#groupTag').html();
+                if ((!year || !month || !nodeKey) &amp;&amp; (!groupTag)) {
+                    return;
+                }
+                $.getJSON('#{request.contextPath}/rest/node', { year: year, month: month, nodeKey: nodeKey, groupTag: groupTag })
+                .done(function(data) {
+                    var ctx = document.getElementById("dayChart").getContext('2d');
+                    if (myChart != null) {
+                        myChart.data.datasets = [];
+                        if (typeof data[0].timeChart[0] !== 'undefined') {
+                        	myChart.options.scales.xAxes[0].time.min = data[0].timeChart[0].x - 86400000;
+                        	myChart.options.scales.xAxes[0].time.max = data[0].timeChart[data[0].timeChart.length - 1].x + 86400000;
+                        }
+                    } else {
+	                    myChart = new Chart(ctx, {
+	    	                type: 'bar',
+	                        options: {
+	                            legend: { display: false },
+	                            responsive: false,
+	                            scales: {
+	                            	xAxes: [{
+	                                    type: 'time',
+		                            	bounds: 'data',
+		                            	ticks: { source: 'data' },
+	                                    time: {
+	                                        unit: 'day',
+	                                        min: data[0].timeChart[0].x - 86400000,
+	                                        max: data[0].timeChart[data[0].timeChart.length - 1].x + 86400000
+	                                    }
+	                                }],
+	                                yAxes: [{
+	                                    ticks: {
+	                                        beginAtZero: true,
+	                                        //scaleLabel: '&lt;%=value%&gt;%',
+	                                        callback: function(value, index, values) {
+	                                            return value + '%';
+	                                        }
+	                                    }
+	                                }]
+	                            }
+	                        }
+                        });
+                    }
+                    var i = 0;
+                    data.forEach((d) => {
+                        myChart.data.datasets.push({label: 'Node ' + data[i].nodeKey , 'data': data[i].timeChart, backgroundColor: 'rgba(75, 192, 192, 0.' + (i + 2) + ')', borderColor: 'rgba(75, 192, 192, 1)', borderWidth: 1});
+                        i++;
+       	            });
+                    myChart.update();
+    			});
+            }
+        </script>
+	</ui:define>
+</ui:composition>

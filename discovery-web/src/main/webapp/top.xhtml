@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:p="http://xmlns.jcp.org/jsf/passthrough"
+	template="/WEB-INF/templates/master.xhtml">
+	<ui:define name="content">
+		<h1>Top Skywire Nodes</h1>
+		<h:form id="topForm">
+			<div>
+				<div class="row">
+					<div class="col-md-6">
+						<h3 style="margin-top: 0px;">Top Nodes by uptime (for last
+							month)</h3>
+					</div>
+					<div class="col-md-5 text-right">
+						<h:commandButton value="10" styleClass="btn btn-info btn-sm">
+							<f:ajax event="click" listener="#{topController.top10}"
+								render="nodeListPanel" />
+						</h:commandButton>
+						<h:commandButton value="100" styleClass="btn btn-info btn-sm"
+							style="margin-left: 5px;">
+							<f:ajax event="click" listener="#{topController.top100}"
+								render="nodeListPanel" />
+						</h:commandButton>
+						<h:commandButton value="1000" styleClass="btn btn-info btn-sm"
+							style="margin-left: 5px;">
+							<f:ajax event="click" listener="#{topController.top1000}"
+								render="nodeListPanel" />
+						</h:commandButton>
+					</div>
+					<div class="col-md-1"></div>
+				</div>
+			</div>
+			<h:panelGroup id="nodeListPanel" layout="block" styleClass="row">
+				<div class="col-md-12">
+					<h:dataTable value="#{topController.uptimeStatistics}" var="us"
+						styleClass="table table-hover table-condensed">
+						<h:column>
+							<f:facet name="header">
+								<h:outputLabel value="Uptime"
+									title="Number of minutes online in last month from today" />
+							</f:facet>
+						#{us.sumCount}
+					</h:column>
+						<h:column>
+							<f:facet name="header">Node Key</f:facet>
+						#{us.node.key}
+					</h:column>
+						<h:column>
+							<f:facet name="header">Country</f:facet>
+						#{us.node.country.country}
+					</h:column>
+						<h:column>
+							<f:facet name="header">App Key</f:facet>
+						#{us.appKey}
+					</h:column>
+					</h:dataTable>
+				</div>
+			</h:panelGroup>
+		</h:form>
+	</ui:define>
+</ui:composition>

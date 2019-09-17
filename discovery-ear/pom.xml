@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<artifactId>discovery</artifactId>
+		<groupId>si.skycoin.discovery</groupId>
+		<version>0.0.1</version>
+	</parent>
+
+	<artifactId>discovery-ear</artifactId>
+	<packaging>ear</packaging>
+
+	<name>discovery: EAR Module</name>
+
+	<dependencies>
+		<dependency>
+			<groupId>si.skycoin.discovery</groupId>
+			<artifactId>discovery-web</artifactId>
+			<type>war</type>
+		</dependency>
+		<dependency>
+			<groupId>si.skycoin.discovery</groupId>
+			<artifactId>discovery-ejb</artifactId>
+			<type>ejb</type>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.mashape.unirest</groupId>
+			<artifactId>unirest-java</artifactId>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<finalName>${project.artifactId}</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-ear-plugin</artifactId>
+				<version>${version.ear.plugin}</version>
+				<configuration>
+					<!-- Tell Maven we are using Java EE 7 -->
+					<version>7</version>
+					<!-- Use Java EE ear libraries as needed. Java EE ear libraries are 
+						in easy way to package any libraries needed in the ear, and automatically 
+						have any modules (EJB-JARs and WARs) use them -->
+					<defaultLibBundleDir>lib</defaultLibBundleDir>
+					<!-- windows ${env.COMPUTERNAME} -->
+					<!-- linux ${env.HOSTNAME} -->
+					<!-- finalName>${project.parent.name}-${project.version}-${timestamp}-${user.name}-${env.COMPUTERNAME}</finalName -->
+					<!-- finalName>${project.parent.artifactId}-${project.version}-${timestamp}-${user.name}-${env.COMPUTERNAME}</finalName -->
+					<modules>
+						<!-- Default context root of the web app is /wheel-counter-web If a 
+							custom context root is needed, uncomment the following snippet to register 
+							our War as a web module and set the contextRoot property -->
+						<webModule>
+							<groupId>si.skycoin.discovery</groupId>
+							<artifactId>discovery-web</artifactId>
+							<contextRoot>/discovery</contextRoot>
+						</webModule>
+					</modules>
+					<fileNameMapping>no-version</fileNameMapping>
+				</configuration>
+			</plugin>
+			<!-- The WildFly plugin deploys your ear to a local WildFly container -->
+			<!-- Due to Maven's lack of intelligence with EARs we need to configure 
+				the wildfly maven plugin to skip deployment for all modules. We then enable 
+				it specifically in the ear module. -->
+			<plugin>
+				<groupId>org.wildfly.plugins</groupId>
+				<artifactId>wildfly-maven-plugin</artifactId>
+				<configuration>
+					<filename>${project.artifactId}.ear</filename>
+					<skip>false</skip>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<profiles>
+		<profile>
+			<id>version</id>
+			<build>
+				<finalName>${project.parent.artifactId}-${project.version}-${timestamp}</finalName>
+			</build>
+		</profile>
+	</profiles>
+
+</project>

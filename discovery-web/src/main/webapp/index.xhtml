@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:p="http://xmlns.jcp.org/jsf/passthrough"
+	template="/WEB-INF/templates/master.xhtml">
+	<ui:define name="content">
+		<h1>Skywire Nodes</h1>
+		<div>
+			<p>
+				Discovery statistics are based on data from <a
+					href="http://discovery.skycoin.net:8001/">discovery.skycoin.net</a>
+			</p>
+			<div class="row">
+				<div class="col-md-6">
+					<h3 style="margin-top: 0px;">Node count</h3>
+				</div>
+				<div class="col-md-5 text-right">
+					<h:button value="1m" onclick="loadChart(1); return false;"
+						styleClass="btn btn-info btn-sm"></h:button>
+					<h:button value="3m" onclick="loadChart(3); return false;"
+						styleClass="btn btn-info btn-sm" style="margin-left: 5px;"></h:button>
+					<h:button value="6m" onclick="loadChart(6); return false;"
+						styleClass="btn btn-info btn-sm" style="margin-left: 5px;"></h:button>
+					<h:button value="ALL" onclick="loadChart(0); return false;"
+						styleClass="btn btn-info btn-sm" style="margin-left: 5px;"></h:button>
+				</div>
+				<div class="col-md-1"></div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-1"></div>
+			<div class="col-md-10">
+				<canvas id="dayChart" style="width: 900px; height: 300px;"></canvas>
+			</div>
+			<div class="col-md-1"></div>
+
+		</div>
+		<div class="row">
+			<div class="col-md-12">
+				<div id="regions_div" style="width: 1000px; height: 600px;"></div>
+			</div>
+		</div>
+
+		<script>
+        $(document).ready(function($) {
+            loadChart(1);
+        });
+
+        var myChart = null;
+		function loadChart(months) {
+        	$.getJSON('#{request.contextPath}/rest/discovery', { months: months })
+			.done(function(data) {
+	            var ctx = document.getElementById("dayChart").getContext('2d');
+	            if (myChart != null) {
+                    myChart.data.datasets = [];
+                    myChart.data.datasets.push({
+		                label: 'Node count',
+		                data: data,
+		                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+		                borderColor: 'rgba(75, 192, 192, 1)',
+		                borderWidth: 1
+	                });
+                    myChart.update();
+                } else {
+		            myChart = new Chart(ctx, {
+		                type: 'bar',
+		                data: {
+			                datasets: [
+				                {
+					                label: 'Node count',
+					                data: data,
+					                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+					                borderColor: 'rgba(75, 192, 192, 1)',
+					                borderWidth: 1
+				                }
+			                ]
+	                	},
+	                    options: {
+	                        legend: { display: false },
+	                        responsive: false,
+	                        scales: {
+	                        	xAxes: [{
+	                                type: 'time',
+	                                time: {
+	                                    unit: 'day'
+	                                }
+	                            }],
+	                            yAxes: [{
+	                                ticks: {
+	                                    beginAtZero: false
+	                                }
+	                            }]
+	                        }
+	                    }
+		            });
+                }
+			});
+		}
+       	$.getJSON('#{request.contextPath}/rest/discovery/location')
+		.done(function(locationData) {
+           google.charts.load('current', {
+               'packages':['geochart'],
+               'mapsApiKey': '...'
+             });
+             google.charts.setOnLoadCallback(drawRegionsMap);
+
+             function drawRegionsMap() {
+               var data = new google.visualization.DataTable();
+               data.addColumn('string', 'Country');
+               data.addColumn('number', 'Node Count');
+               locationData.forEach((l) => {
+               	data.addRow([l.country, l.nodeCount]);
+               });
+               var options = {
+                   colorAxis: {colors: ['#2244ff', '#112244']},
+                   //backgroundColor: '#81d4fa',
+                   //datalessRegionColor: '#22FF00',
+                   //defaultColor: '#002200',
+               };
+               var chart = new google.visualization.GeoChart(document.getElementById('regions_div'));
+               chart.draw(data, options);
+             }
+		});
+        </script>
+	</ui:define>
+</ui:composition>
